@@ -40,7 +40,7 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
     }
 
     with ExitStack() as stack:
-        #Open all file that will be written to this iteration
+        #Open all file that will be written to this iteration in scope of ExitStack() object
         files = [stack.enter_context(open(filename, write_mode)) for filename in filenames]
 
         #Get number of lines for each code type broken down into different types
@@ -65,8 +65,6 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
             group = re.search(r'^([^\s]+(\s[^\s]+)*)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)', line)
             if not group: 
                 continue
-            
-            values = [group.group(3), group.group(4), group.group(5), group.group(6)]
 
             file_type = group.group(1)
             #num_files = group.group(3)
@@ -77,10 +75,10 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
             if file_type == "C/C++ Header":
                 file_type = "C-C++ Header" #Not a valid folder name because of the /
             elif file_type == "SUM:":
-                file_type = "Sum stats for version"
+                file_type = "Sum stats"
             
             #Get the line information for the file type
-            line_info_for_code_type[file_type] = [int(values[0]), int(values[1]), int(values[2]), int(values[3])]
+            line_info_for_code_type[file_type] = [int(group.group(3)), int(group.group(4)), int(group.group(5)), int(group.group(6))]
 
 
         if not subsystem_already_found:
@@ -90,7 +88,7 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
                 print("Version", end='', file=file)
                 for code_type in line_info_for_code_type:
                     print(",{}".format(code_type), end='', file=file)
-                print("", file=file) #New line
+                print("", file=file) #New line 08
     
 
         #Print the version name and the line information for each file type as a comma seperated list
