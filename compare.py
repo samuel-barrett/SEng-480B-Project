@@ -26,17 +26,35 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
         "Java":[0,0,0,0], 
         "C++":[0,0,0,0], 
         "C":[0,0,0,0],
-        "C-C++ Header":[0,0,0,0],
+        "C + C++ Header":[0,0,0,0],
         "Objective-C":[0,0,0,0],
         "Ruby":[0,0,0,0],
-        "Shell":[0,0,0,0],
         "BUCK":[0,0,0,0],
         "XML":[0,0,0,0],
         "Markdown":[0,0,0,0],
         "JSON":[0,0,0,0],
         "Makefile":[0,0,0,0],
         "Bash":[0,0,0,0],
-        "Sum stats for version":[0,0,0,0]
+        "HTML":[0,0,0,0],
+        "CSS":[0,0,0,0],
+        "Bourne Shell":[0,0,0,0],
+        "Bourne Again Shell":[0,0,0,0],
+        "YAML":[0,0,0,0],
+        "Objective-C++":[0,0,0,0],
+        "make":[0,0,0,0],
+        "Gradle":[0,0,0,0],
+        "ProGuard":[0,0,0,0],
+        "awk":[0,0,0,0],
+        "Python":[0,0,0,0],
+        "DOS Batch":[0,0,0,0],
+        "Assembly":[0,0,0,0],
+        "JSX":[0,0,0,0],
+        "Sass":[0,0,0,0],
+        "Dockerfile":[0,0,0,0],
+        "Kotlin":[0,0,0,0],
+        "Starlark":[0,0,0,0],
+        "CMake":[0,0,0,0],
+        "Aggregate stats":[0,0,0,0]
     }
 
     with ExitStack() as stack:
@@ -72,12 +90,16 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
             #num_comment_lines = group.group(5)
             #num_code_lines = group.group(6)
 
-            if file_type == "C/C++ Header":
-                file_type = "C-C++ Header" #Not a valid folder name because of the /
+            if file_type == "C/C++ Header": #Not a valid folder name because of the /
+                file_type = "C+C++ Header" 
             elif file_type == "SUM:":
-                file_type = "Sum stats"
+                file_type = "Aggregate stats"
             
             #Get the line information for the file type
+            #check if file_type in line_info_for_code_type
+            if not file_type in line_info_for_code_type:
+                raise RuntimeError("File type {} not found in line_info_for_code_type".format(file_type))
+
             line_info_for_code_type[file_type] = [int(group.group(3)), int(group.group(4)), int(group.group(5)), int(group.group(6))]
 
 
@@ -94,8 +116,10 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
         #Print the version name and the line information for each file type as a comma seperated list
         #Print the different values to each file one by one
         for (i,f) in enumerate(files):
-            print("0.{}-stable".format(version), end='', file=f)
+            print(version, end='', file=f)
+            j=0
             for (key, value) in line_info_for_code_type.items():
+                j+=1
                 print(","+str(value[i]), end='', file=f)
             print("", file=f)
 
