@@ -87,19 +87,18 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
             #Write the header for the file
             #Includes version number, and code types from dictionary
             for file in files:
-                write_string = "Version,"
+                print("Version", end='', file=file)
                 for code_type in line_info_for_code_type:
-                    write_string += "{},".format(code_type)
-                #Print the string to file
-                file.write(write_string[:-1] + "\n")
+                    print(",{}".format(code_type), end='', file=file)
+                print("", file=file) #New line
     
 
         #Print the version name and the line information for each file type as a comma seperated list
         #Print the different values to each file one by one
         for (i,f) in enumerate(files):
-            print("0.{}-stable".format(version) + ",", end='', file=f)
+            print("0.{}-stable".format(version), end='', file=f)
             for (key, value) in line_info_for_code_type.items():
-                print(str(value[i]) + ",", end='', file=f)
+                print(","+str(value[i]), end='', file=f)
             print("", file=f)
 
         #Reset the line information for the code type
