@@ -22,39 +22,40 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
     #Values contain the number of file, number of blank lines, number of 
     #commented lines, and number of code lines respectively
     line_info_for_code_type = {
-        "JavaScript":[0,0,0,0,0],
-        "Java":[0,0,0,0,0], 
-        "C++":[0,0,0,0,0], 
-        "C":[0,0,0,0,0],
-        "C&C++ Header":[0,0,0,0,0],
-        "Objective-C":[0,0,0,0,0],
-        "Ruby":[0,0,0,0,0],
-        "BUCK":[0,0,0,0,0],
-        "XML":[0,0,0,0,0],
-        "Markdown":[0,0,0,0,0],
-        "JSON":[0,0,0,0,0],
-        "Makefile":[0,0,0,0,0],
-        "Bash":[0,0,0,0,0],
-        "HTML":[0,0,0,0,0],
-        "CSS":[0,0,0,0,0],
-        "Bourne Shell":[0,0,0,0,0],
-        "Bourne Again Shell":[0,0,0,0,0],
-        "YAML":[0,0,0,0,0],
-        "Objective-C++":[0,0,0,0,0],
-        "make":[0,0,0,0,0],
-        "Gradle":[0,0,0,0,0],
-        "ProGuard":[0,0,0,0,0],
-        "awk":[0,0,0,0,0],
-        "Python":[0,0,0,0,0],
-        "DOS Batch":[0,0,0,0,0],
-        "Assembly":[0,0,0,0,0],
-        "JSX":[0,0,0,0,0],
-        "Sass":[0,0,0,0,0],
-        "Dockerfile":[0,0,0,0,0],
-        "Kotlin":[0,0,0,0,0],
-        "Starlark":[0,0,0,0,0],
-        "CMake":[0,0,0,0,0],
-        "Aggregate stats":[0,0,0,0,0]
+        "JavaScript":[0,0,0,0,0,0],
+        "Java":[0,0,0,0,0,0], 
+        "C++":[0,0,0,0,0,0], 
+        "C":[0,0,0,0,0,0],
+        "C&C++ Header":[0,0,0,0,0,0],
+        "Objective-C":[0,0,0,0,0,0],
+        "Ruby":[0,0,0,0,0,0],
+        "BUCK":[0,0,0,0,0,0],
+        "XML":[0,0,0,0,0,0],
+        "Markdown":[0,0,0,0,0,0],
+        "JSON":[0,0,0,0,0,0],
+        "Makefile":[0,0,0,0,0,0],
+        "Bash":[0,0,0,0,0,0],
+        "HTML":[0,0,0,0,0,0],
+        "CSS":[0,0,0,0,0,0],
+        "Bourne Shell":[0,0,0,0,0,0],
+        "Bourne Again Shell":[0,0,0,0,0,0],
+        "YAML":[0,0,0,0,0,0],
+        "Objective-C++":[0,0,0,0,0,0],
+        "make":[0,0,0,0,0,0],
+        "Gradle":[0,0,0,0,0,0],
+        "ProGuard":[0,0,0,0,0,0],
+        "awk":[0,0,0,0,0,0],
+        "Python":[0,0,0,0,0,0],
+        "DOS Batch":[0,0,0,0,0,0],
+        "Assembly":[0,0,0,0,0,0],
+        "JSX":[0,0,0,0,0,0],
+        "Sass":[0,0,0,0,0,0],
+        "Dockerfile":[0,0,0,0,0,0],
+        "Kotlin":[0,0,0,0,0,0],
+        "Starlark":[0,0,0,0,0,0],
+        "CMake":[0,0,0,0,0,0],
+        "Maven":[0,0,0,0,0,0],
+        "Aggregate stats":[0,0,0,0,0,0]
     }
 
     with ExitStack() as stack:
@@ -90,6 +91,7 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
             num_comment_lines = int(group.group(5))
             num_code_lines = int(group.group(6))
             num_total_lines = num_blank_lines + num_comment_lines + num_code_lines
+            num_non_empty_lines = num_code_lines + num_comment_lines
 
             if file_type == "C/C++ Header": #Not a valid folder name because of the /
                 file_type = "C&C++ Header" 
@@ -101,7 +103,7 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
             if not file_type in line_info_for_code_type:
                 raise RuntimeError("File type {} not found in line_info_for_code_type".format(file_type))
 
-            line_info_for_code_type[file_type] = [num_files, num_blank_lines, num_comment_lines, num_code_lines, num_total_lines]
+            line_info_for_code_type[file_type] = [num_files, num_blank_lines, num_comment_lines, num_code_lines, num_total_lines, num_non_empty_lines]
 
 
         if not subsystem_already_found:
@@ -124,12 +126,12 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
 
         #Reset the line information for the code type
         for (key, value) in line_info_for_code_type.items():
-            line_info_for_code_type[key] = [0,0,0,0,0]
+            line_info_for_code_type[key] = [0,0,0,0,0,0]
 
 
 def main():
     VERSIONS_RANGE = [r for r in range(5, 66) if r != 16] #Version 16 missing
-    FOLDER_TYPES = ["num_files", "num_blank_lines", "num_commented_lines", "num_code_lines", "num_total_lines"]
+    FOLDER_TYPES = ["num_files", "num_blank_lines", "num_commented_lines", "num_code_lines", "num_total_lines", "num_non_empty_lines"]
     STATS_FOLDER = "stats"
 
 
@@ -148,6 +150,15 @@ def main():
 
         read_obj = os.popen("file {}/* | grep directory".format(version_name), 'r')
         folders = read_obj.read().split(' ')
+
+        #Get overall stats for each version
+        aggregate_stats_name = "*"
+        if aggregate_stats_name in subsystem_names_found:
+            subsystem_already_found = True
+        else:
+            subsystem_already_found = False
+            subsystem_names_found.append(aggregate_stats_name)
+        get_number_of_lines_for_folder(i, aggregate_stats_name, subsystem_already_found, FOLDER_TYPES)
         
         #Get name of subdirecotory in folders using regex
         for folder in folders:
@@ -164,6 +175,11 @@ def main():
                 subsystem_already_found = False
 
             get_number_of_lines_for_folder(i, subsystem_name, subsystem_already_found, FOLDER_TYPES)
+        
+    #For stats type, change the aggregate data name from '*.csv' to aggregate.csv
+    for folder_type in FOLDER_TYPES:
+        os.system("mv \'./{}/{}/*.csv\' ./{}/{}/aggregate.csv".format(STATS_FOLDER, folder_type, STATS_FOLDER, folder_type))
+
 
 if __name__ == "__main__":
     main()
