@@ -1,77 +1,128 @@
 import os
 import re
+from contextlib import ExitStack
 
-def get_num_lines_for_file_type(folder_name: str, file_types: [str]):
-    num_lines = 0
-    for file_type in file_types:
-        read_obj = os.popen("( find ./{} -name '{}' -print0 | xargs -0 cat ) | wc -l".format(folder_name, file_type), 'r')
-        num_lines += int(read_obj.read())
-    return num_lines
+def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_already_found: bool, folder_types: list):
 
-def get_line_numbers_for_folder(version: int, folder_name: str, out_file_name: str, already_found: bool):
+    read_obj = os.popen("cloc 0.{}-stable/{} -T=5".format(version,subsystem_name), 'r')
+    lines = read_obj.read().split('\n')
 
-    if already_found:
+    if subsystem_already_found:
         write_mode = 'a'
     else:
         write_mode = 'w'
 
+    stats_folder = "stats"
 
-    with open(out_file_name, write_mode) as out_file:
 
-        if not already_found:
-            print("Version Name,JavaScript,Java, C++ source, C source,C/C++ Header,Ruby,Shell,BUCK,XML", file=out_file)
+    filenames = ["./{}/{}/{}.csv".format(stats_folder, folder_type, subsystem_name) for folder_type in folder_types]
 
-        #print("Finding info for for version {}".format(folder_name))
-        print("{}".format(version), end=',', file=out_file)
 
-        #Javascript lines of code
-        javascript_lines = get_num_lines_for_file_type(folder_name, ['*.js'])
-        print("{}".format(javascript_lines), end=",", file=out_file)
+    #Dictionary to store line information
+    #Values contain the number of file, number of blank lines, number of 
+    #commented lines, and number of code lines respectively
+    line_info_for_code_type = {
+        "JavaScript":[0,0,0,0],
+        "Java":[0,0,0,0], 
+        "C++":[0,0,0,0], 
+        "C":[0,0,0,0],
+        "C-C++ Header":[0,0,0,0],
+        "Objective-C":[0,0,0,0],
+        "Ruby":[0,0,0,0],
+        "Shell":[0,0,0,0],
+        "BUCK":[0,0,0,0],
+        "XML":[0,0,0,0],
+        "Markdown":[0,0,0,0],
+        "JSON":[0,0,0,0],
+        "Makefile":[0,0,0,0],
+        "Bash":[0,0,0,0],
+        "Sum stats for version":[0,0,0,0]
+    }
 
-        #Java lines of code
-        java_lines = get_num_lines_for_file_type(folder_name, ['*.java'])
-        print("{}".format(java_lines), end=",", file=out_file)
+    with ExitStack() as stack:
+        #Open all file that will be written to this iteration
+        files = [stack.enter_context(open(filename, write_mode)) for filename in filenames]
 
-        #C++ source lines of code
-        cpp_source_lines = get_num_lines_for_file_type(folder_name, ['*.cpp'])
-        print("{}".format(cpp_source_lines), end=",", file=out_file)
+        #Get number of lines for each code type broken down into different types
+        language_line_found = False
+        for line in lines:
+            if line.startswith("Language"):
+                language_line_found = True
+                continue
+            
+            if not language_line_found:
+                continue
 
-        #C source lines of code
-        c_source_lines = get_num_lines_for_file_type(folder_name, ['*.c'])
-        print("{}".format(c_source_lines), end=",", file=out_file)
+            #Check if line is a bunch of dashes
+            if line.startswith("----"):
+                continue
 
-        #C header lines of code
-        c_cpp_header_lines = get_num_lines_for_file_type(folder_name, ['*.h', '*.hpp']) #Data set does not have .hpp files but included for completeness
-        print("{}".format(c_cpp_header_lines), end=",", file=out_file)
+            #Get the type of file, which is the first word in the line
+            #Also get the number of files which is the second word and a number
+            #Get the number of blank lines which is the third word and a number
+            #Get the number of comment lines which is the fourth word and a number
+            #Get the number of code lines which is the fifth word and a number
+            group = re.search(r'^([^\s]+(\s[^\s]+)*)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)', line)
+            if not group: 
+                continue
+            
+            values = [group.group(3), group.group(4), group.group(5), group.group(6)]
 
-        #Ruby lines of code
-        ruby_lines = get_num_lines_for_file_type(folder_name, ['*.rb'])
-        print("{}".format(ruby_lines), end=",", file=out_file)
+            file_type = group.group(1)
+            #num_files = group.group(3)
+            #num_blank_lines = group.group(4)
+            #num_comment_lines = group.group(5)
+            #num_code_lines = group.group(6)
 
-        #Shell lines of code
-        shell_lines = get_num_lines_for_file_type(folder_name, ['*.sh', '*.bash','*.zsh','*.command'])
-        print("{}".format(shell_lines), end=",", file=out_file)
+            if file_type == "C/C++ Header":
+                file_type = "C-C++ Header" #Not a valid folder name because of the /
+            elif file_type == "SUM:":
+                file_type = "Sum stats for version"
+            
+            #Get the line information for the file type
+            line_info_for_code_type[file_type] = [int(values[0]), int(values[1]), int(values[2]), int(values[3])]
 
-        #BUCK lines of code
-        buck_lines = get_num_lines_for_file_type(folder_name, ['BUCK'])
-        print("{}".format(buck_lines), end=",", file=out_file)
 
-        #XML lines of code
-        xml_lines = get_num_lines_for_file_type(folder_name, ['*.xml'])
-        print("{}".format(xml_lines), file = out_file)
+        if not subsystem_already_found:
+            #Write the header for the file
+            #Includes version number, and code types from dictionary
+            for file in files:
+                write_string = "Version,"
+                for code_type in line_info_for_code_type:
+                    write_string += "{},".format(code_type)
+                #Print the string to file
+                file.write(write_string[:-1] + "\n")
+    
+
+        #Print the version name and the line information for each file type as a comma seperated list
+        #Print the different values to each file one by one
+        for (i,f) in enumerate(files):
+            print("0.{}-stable".format(version) + ",", end='', file=f)
+            for (key, value) in line_info_for_code_type.items():
+                print(str(value[i]) + ",", end='', file=f)
+            print("", file=f)
+
+        #Reset the line information for the code type
+        for (key, value) in line_info_for_code_type.items():
+            line_info_for_code_type[key] = [0,0,0,0]
+
 
 def main():
-    VERSIONS_RANGE = range(5, 66)
+    VERSIONS_RANGE = [r for r in range(5, 66) if r != 16] #Version 16 missing
+    FOLDER_TYPES = ["Num Files", "Num Blank Lines", "Num Commented Lines", "Num Code Lines"]
+    STATS_FOLDER = "stats"
 
+    [os.system("mkdir -p \'./{}/{}\'".format(STATS_FOLDER, FOLDER_TYPE)) for FOLDER_TYPE in FOLDER_TYPES]
+ 
+    stats_folder = "stats"
+    os.system("mkdir ./{}".format(stats_folder))
 
-    stats_folder_name = "stats"
-    os.system("mkdir ./{}".format(stats_folder_name))
-
-    folder_names_found = []
-    already_found = False
+    subsystem_names_found = []
+    subsystem_already_found = False
 
     for i in VERSIONS_RANGE:
         version_name = '0.{}-stable'.format(i)
+        print("Getting stats for {}".format(version_name))
 
         read_obj = os.popen("file {}/* | grep directory".format(version_name), 'r')
         folders = read_obj.read().split(' ')
@@ -81,18 +132,16 @@ def main():
             group = re.search(r'((?<=\/)[^\/]*):$', folder)
             if not group:
                 continue
-            folder_name = group.group(1)
+            subsystem_name = group.group(1)
 
             #Check if folder in list of folders found
-            if folder_name in folder_names_found:
-                already_found = True
-            else :
-                folder_names_found.append(folder_name)
-                already_found = False
+            if subsystem_name in subsystem_names_found:
+                subsystem_already_found = True
+            else:
+                subsystem_names_found.append(subsystem_name)
+                subsystem_already_found = False
 
-            #print("Finding info for folder_name:{}".format(folder_name))
-            get_line_numbers_for_folder(i, "./{}/{}".format(version_name, folder_name), './{}/{}.csv'.format(stats_folder_name, folder_name), already_found)
-
+            get_number_of_lines_for_folder(i, subsystem_name, subsystem_already_found, FOLDER_TYPES)
 
 if __name__ == "__main__":
     main()
