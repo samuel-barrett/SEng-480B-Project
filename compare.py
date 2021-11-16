@@ -22,39 +22,39 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
     #Values contain the number of file, number of blank lines, number of 
     #commented lines, and number of code lines respectively
     line_info_for_code_type = {
-        "JavaScript":[0,0,0,0],
-        "Java":[0,0,0,0], 
-        "C++":[0,0,0,0], 
-        "C":[0,0,0,0],
-        "C + C++ Header":[0,0,0,0],
-        "Objective-C":[0,0,0,0],
-        "Ruby":[0,0,0,0],
-        "BUCK":[0,0,0,0],
-        "XML":[0,0,0,0],
-        "Markdown":[0,0,0,0],
-        "JSON":[0,0,0,0],
-        "Makefile":[0,0,0,0],
-        "Bash":[0,0,0,0],
-        "HTML":[0,0,0,0],
-        "CSS":[0,0,0,0],
-        "Bourne Shell":[0,0,0,0],
-        "Bourne Again Shell":[0,0,0,0],
-        "YAML":[0,0,0,0],
-        "Objective-C++":[0,0,0,0],
-        "make":[0,0,0,0],
-        "Gradle":[0,0,0,0],
-        "ProGuard":[0,0,0,0],
-        "awk":[0,0,0,0],
-        "Python":[0,0,0,0],
-        "DOS Batch":[0,0,0,0],
-        "Assembly":[0,0,0,0],
-        "JSX":[0,0,0,0],
-        "Sass":[0,0,0,0],
-        "Dockerfile":[0,0,0,0],
-        "Kotlin":[0,0,0,0],
-        "Starlark":[0,0,0,0],
-        "CMake":[0,0,0,0],
-        "Aggregate stats":[0,0,0,0]
+        "JavaScript":[0,0,0,0,0],
+        "Java":[0,0,0,0,0], 
+        "C++":[0,0,0,0,0], 
+        "C":[0,0,0,0,0],
+        "C&C++ Header":[0,0,0,0,0],
+        "Objective-C":[0,0,0,0,0],
+        "Ruby":[0,0,0,0,0],
+        "BUCK":[0,0,0,0,0],
+        "XML":[0,0,0,0,0],
+        "Markdown":[0,0,0,0,0],
+        "JSON":[0,0,0,0,0],
+        "Makefile":[0,0,0,0,0],
+        "Bash":[0,0,0,0,0],
+        "HTML":[0,0,0,0,0],
+        "CSS":[0,0,0,0,0],
+        "Bourne Shell":[0,0,0,0,0],
+        "Bourne Again Shell":[0,0,0,0,0],
+        "YAML":[0,0,0,0,0],
+        "Objective-C++":[0,0,0,0,0],
+        "make":[0,0,0,0,0],
+        "Gradle":[0,0,0,0,0],
+        "ProGuard":[0,0,0,0,0],
+        "awk":[0,0,0,0,0],
+        "Python":[0,0,0,0,0],
+        "DOS Batch":[0,0,0,0,0],
+        "Assembly":[0,0,0,0,0],
+        "JSX":[0,0,0,0,0],
+        "Sass":[0,0,0,0,0],
+        "Dockerfile":[0,0,0,0,0],
+        "Kotlin":[0,0,0,0,0],
+        "Starlark":[0,0,0,0,0],
+        "CMake":[0,0,0,0,0],
+        "Aggregate stats":[0,0,0,0,0]
     }
 
     with ExitStack() as stack:
@@ -85,13 +85,14 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
                 continue
 
             file_type = group.group(1)
-            #num_files = group.group(3)
-            #num_blank_lines = group.group(4)
-            #num_comment_lines = group.group(5)
-            #num_code_lines = group.group(6)
+            num_files = int(group.group(3))
+            num_blank_lines = int(group.group(4))
+            num_comment_lines = int(group.group(5))
+            num_code_lines = int(group.group(6))
+            num_total_lines = num_blank_lines + num_comment_lines + num_code_lines
 
             if file_type == "C/C++ Header": #Not a valid folder name because of the /
-                file_type = "C+C++ Header" 
+                file_type = "C&C++ Header" 
             elif file_type == "SUM:":
                 file_type = "Aggregate stats"
             
@@ -100,7 +101,7 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
             if not file_type in line_info_for_code_type:
                 raise RuntimeError("File type {} not found in line_info_for_code_type".format(file_type))
 
-            line_info_for_code_type[file_type] = [int(group.group(3)), int(group.group(4)), int(group.group(5)), int(group.group(6))]
+            line_info_for_code_type[file_type] = [num_files, num_blank_lines, num_comment_lines, num_code_lines, num_total_lines]
 
 
         if not subsystem_already_found:
@@ -117,26 +118,26 @@ def get_number_of_lines_for_folder(version: int, subsystem_name: str, subsystem_
         #Print the different values to each file one by one
         for (i,f) in enumerate(files):
             print(version, end='', file=f)
-            j=0
             for (key, value) in line_info_for_code_type.items():
-                j+=1
                 print(","+str(value[i]), end='', file=f)
             print("", file=f)
 
         #Reset the line information for the code type
         for (key, value) in line_info_for_code_type.items():
-            line_info_for_code_type[key] = [0,0,0,0]
+            line_info_for_code_type[key] = [0,0,0,0,0]
 
 
 def main():
     VERSIONS_RANGE = [r for r in range(5, 66) if r != 16] #Version 16 missing
-    FOLDER_TYPES = ["Num Files", "Num Blank Lines", "Num Commented Lines", "Num Code Lines"]
+    FOLDER_TYPES = ["num_files", "num_blank_lines", "num_commented_lines", "num_code_lines", "num_total_lines"]
     STATS_FOLDER = "stats"
 
-    [os.system("mkdir -p \'./{}/{}\'".format(STATS_FOLDER, FOLDER_TYPE)) for FOLDER_TYPE in FOLDER_TYPES]
- 
+
+    #Make the necessary folders
     stats_folder = "stats"
     os.system("mkdir ./{}".format(stats_folder))
+
+    [os.system("mkdir -p \'./{}/{}\'".format(STATS_FOLDER, FOLDER_TYPE)) for FOLDER_TYPE in FOLDER_TYPES]
 
     subsystem_names_found = []
     subsystem_already_found = False
